@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong-gateway
+  namespace: user-system
+  labels:
+    app: kong-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kong-gateway
+  template:
+    metadata:
+      labels:
+        app: kong-gateway
+    spec:
+      containers:
+      - name: kong
+        image: kong:3.4
+        env:
+        - name: KONG_DATABASE
+          value: "off"  # DB-less mode
+        - name: KONG_DECLARATIVE_CONFIG
+          value: /kong/declarative/kong.yml
+        - name: KONG_PROXY_ACCESS_LOG
+          value: /dev/stdout
+        - name: KONG_ADMIN_ACCESS_LOG
+          value: /dev/stdout
+        - name: KONG_PROXY_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_ADMIN_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_ADMIN_LISTEN
+          value: "0.0.0.0:8001"
+        - name: KONG_PROXY_LISTEN
+          value: "0.0.0.0:8000"
+        - name: KONG_ADMIN_GUI_LISTEN
+          value: "0.0.0.0:8002"
+        - name: KONG_NGINX_WORKER_PROCESSES
+          value: "1"
+        - name: KONG_NGINX_DAEMON
+          value: "off"
+        ports:
+        - containerPort: 8000
+          name: proxy
+          protocol: TCP
+        - containerPort: 8001
+          name: admin
+          protocol: TCP
+        - containerPort: 8002
+          name: admin-gui
+          protocol: TCP
+        volumeMounts:
+        - name: kong-config
+          mountPath: /kong/declarative/kong.yml
+          subPath: kong.yml
+          readOnly: true
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /status
+            port: 8001
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /status
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: kong-config
+        configMap:
+          name: kong-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong-gateway
+  namespace: user-system
+  labels:
+    app: kong-gateway
+spec:
+  type: NodePort
+  ports:
+  - port: 8000
+    targetPort: 8000
+    nodePort: 30800
+    protocol: TCP
+    name: proxy
+  - port: 8001
+    targetPort: 8001
+    nodePort: 30801
+    protocol: TCP
+    name: admin
+  - port: 8002
+    targetPort: 8002
+    nodePort: 30802
+    protocol: TCP
+    name: admin-gui
+  selector:
+    app: kong-gateway

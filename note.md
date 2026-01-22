@@ -182,20 +182,33 @@ cd k8s
 - Routing & Load Balancing
 
 **Steps thực hiện**:
-1. Deploy Kong Gateway lên K8s
-2. Cài đặt Ingress Controller
-3. Configure Kong:
-   - Tạo Service trong Kong
-   - Tạo Routes
-   - Setup rate limiting
-   - Setup CORS
-4. Tạo Ingress resource cho user-service
-5. Test API qua Kong Gateway
+1. ✅ Deploy Kong Gateway lên K8s (DB-less mode)
+2. ✅ Configure Kong với declarative config:
+   - Tạo Service trong Kong (user-service)
+   - Tạo Routes (/api → user-service)
+   - Setup rate limiting (100/min, 1000/hour)
+   - Setup CORS (allow all origins)
+3. ✅ Đổi user-service từ NodePort sang ClusterIP
+4. ✅ Test API qua Kong Gateway
 
 **Deliverables**:
 - ✅ Kong Gateway đang chạy
-- ✅ API accessible từ external
+- ✅ API accessible từ external qua Kong (port 30800)
 - ✅ Rate limiting hoạt động
+- ✅ CORS support
+
+**How to Deploy**:
+```powershell
+# Deploy Phase 3 (sau khi đã deploy Phase 2)
+cd k8s
+.\deploy-phase3.ps1
+
+# Test
+.\test-phase3.ps1
+
+# Access via Kong Gateway
+# http://localhost:30800/api/users
+```
 
 ---
 
@@ -457,7 +470,7 @@ cd k8s
 - [x] User Service (Spring Boot) ✅
 - [x] PostgreSQL Database ✅
 - [x] Redis Cache ✅
-- [ ] Kong API Gateway
+- [x] Kong API Gateway ✅
 - [ ] Keycloak IDP
 - [ ] Kafka Message Broker
 - [ ] Istio Service Mesh

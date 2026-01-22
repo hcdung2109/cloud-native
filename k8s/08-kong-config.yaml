@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-config
+  namespace: user-system
+data:
+  kong.yml: |
+    _format_version: "3.0"
+    
+    services:
+    - name: user-service
+      url: http://user-service.user-system.svc.cluster.local:8080
+      routes:
+      - name: user-service-route
+        paths:
+        - /api
+        strip_path: false
+        methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+        plugins:
+        - name: rate-limiting
+          config:
+            minute: 100
+            hour: 1000
+            policy: local
+        - name: cors
+          config:
+            origins:
+            - "*"
+            methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+            - PATCH
+            headers:
+            - Accept
+            - Accept-Language
+            - Content-Language
+            - Content-Type
+            - Authorization
+            exposed_headers:
+            - X-Requested-With
+            credentials: true
+            max_age: 3600
+            preflight_continue: false
